@@ -2,7 +2,7 @@
 
 Plataforma d'aplicacions de matemàtiques per a nens i nenes de 6–8 anys. Totes les apps comparteixen perfils, XP i medalles, i funcionen directament al navegador sense instal·lació.
 
-🔗 **[Obre matemapp](https://albertgodina.github.io/matemapp)**
+🔗 **[Obre matemapp]([https://albertgodina.github.io/MatemApp/])**
 
 ---
 
