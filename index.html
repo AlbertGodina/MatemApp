@@ -1,1 +1,405 @@
-1
+<!DOCTYPE html>
+<html lang="ca" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MatemApp — Matemàtiques per a tots</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+/* ── HUB-SPECIFIC STYLES ── */
+.hub-hero {
+  padding: 32px 0 24px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 6px;
+}
+.hub-logo {
+  font-size: 2.6rem; font-weight: 900; letter-spacing: -0.04em;
+  color: var(--ink); line-height: 1;
+}
+.hub-logo span { color: var(--accent); }
+.hub-sub { font-size: 0.9rem; color: var(--ink-soft); font-weight: 600; }
+
+/* Profile selector on hub */
+.hub-profile-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  margin-bottom: 24px; gap: 12px;
+}
+.hub-profile-bar .profile-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.hub-profile-bar .profile-avatar {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--accent-light);
+  color: var(--accent); font-weight: 900; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.hub-profile-bar .name  { font-weight: 800; font-size: 0.92rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hub-profile-bar .level { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-soft); }
+
+/* XP bar compact */
+.xp-bar-compact { height: 4px; background: var(--border); border-radius: 2px; margin-top: 3px; overflow: hidden; width: 100%; }
+.xp-bar-compact-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.6s ease; }
+
+/* App grid */
+.apps-grid { display: flex; flex-direction: column; gap: 12px; }
+
+.app-card {
+  display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border: 2px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
+  text-decoration: none; color: inherit;
+  transition: all 0.18s ease; position: relative; overflow: hidden;
+}
+.app-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.app-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 5px; border-radius: var(--radius) 0 0 var(--radius);
+  transition: width 0.18s ease;
+}
+.app-card:hover::before { width: 8px; }
+
+.app-card.sumes     { border-color: var(--app-sumes); }
+.app-card.sumes::before  { background: var(--app-sumes); }
+.app-card.taules    { border-color: var(--app-taules); }
+.app-card.taules::before { background: var(--app-taules); }
+.app-card.geometria { border-color: var(--app-geometria); }
+.app-card.geometria::before { background: var(--app-geometria); }
+
+.app-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; flex-shrink: 0;
+}
+.sumes     .app-icon { background: #DCFCE7; }
+.taules    .app-icon { background: var(--accent-light); }
+.geometria .app-icon { background: var(--purple-light); }
+
+.app-info { flex: 1; min-width: 0; }
+.app-info h3 { font-size: 1.05rem; font-weight: 800; color: var(--ink); letter-spacing: -0.01em; }
+.app-info p  { font-size: 0.8rem; color: var(--ink-soft); margin-top: 2px; }
+
+/* Per-app progress on card */
+.app-progress { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.app-progress-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.app-progress-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+.sumes     .app-progress-fill { background: var(--app-sumes); }
+.taules    .app-progress-fill { background: var(--app-taules); }
+.geometria .app-progress-fill { background: var(--app-geometria); }
+.app-progress-pct { font-family: var(--mono); font-size: 0.68rem; color: var(--ink-soft); white-space: nowrap; }
+
+.app-arrow { color: var(--ink-lighter); font-size: 1rem; flex-shrink: 0; }
+
+/* Global stats strip */
+.global-stats {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px;
+}
+.global-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 8px; text-align: center;
+}
+.global-stat .val { font-family: var(--mono); font-size: 1.2rem; font-weight: 500; color: var(--ink); }
+.global-stat .lbl { font-size: 0.64rem; color: var(--ink-soft); margin-top: 2px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Badges strip */
+.badges-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 20px; }
+.badges-strip::-webkit-scrollbar { height: 3px; }
+.badge-mini {
+  flex-shrink: 0; padding: 5px 10px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 700;
+  background: var(--border); color: var(--ink-soft);
+  white-space: nowrap; border: 1.5px solid transparent;
+}
+.badge-mini.earned { background: var(--yellow-light); border-color: var(--yellow); color: var(--ink); }
+
+/* Profile selector modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100;
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.modal-sheet {
+  background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+  padding: 24px 20px 32px; width: 100%; max-width: 480px;
+  animation: slideUp 0.25s ease;
+  max-height: 80vh; overflow-y: auto;
+}
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<div class="screen active" id="screen-hub" style="max-width:480px">
+
+  <!-- NAV -->
+  <div class="nav" style="margin-bottom:0">
+    <div class="nav-logo">Matem<span class="dot">App</span></div>
+    <div class="nav-actions">
+      <button class="theme-btn" onclick="mkToggleTheme()">🌙</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hub-hero">
+    <div style="font-size:2.8rem">🧮</div>
+    <div class="hub-logo">Matem<span>App</span></div>
+    <div class="hub-sub">Matemàtiques divertides per a 6–8 anys</div>
+  </div>
+
+  <!-- PROFILE BAR -->
+  <div class="hub-profile-bar" id="hub-profile-bar" onclick="openProfileModal()" style="cursor:pointer">
+    <div class="profile-info" id="hub-profile-info">
+      <div class="profile-avatar" id="hub-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div class="name" id="hub-profile-name">Selecciona un perfil</div>
+        <div class="level" id="hub-profile-level">Toca per canviar</div>
+        <div class="xp-bar-compact"><div class="xp-bar-compact-fill" id="hub-xp-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <span style="color:var(--ink-lighter);font-size:0.85rem">▾</span>
+  </div>
+
+  <!-- GLOBAL STATS -->
+  <div class="global-stats" id="hub-stats" style="display:none">
+    <div class="global-stat"><div class="val" id="hub-pts">0</div><div class="lbl">Punts</div></div>
+    <div class="global-stat"><div class="val" id="hub-correct">0</div><div class="lbl">Encerts</div></div>
+    <div class="global-stat"><div class="val" id="hub-streak">0</div><div class="lbl">Millor ratxa</div></div>
+  </div>
+
+  <!-- BADGES STRIP -->
+  <div id="hub-badges-wrap" style="display:none">
+    <div class="section-label">Medalles</div>
+    <div class="badges-strip" id="hub-badges"></div>
+  </div>
+
+  <!-- APPS -->
+  <div class="section-label" style="margin-bottom:10px">Activitats</div>
+  <div class="apps-grid">
+
+    <a class="app-card sumes" href="sumes/index.html" id="card-sumes">
+      <div class="app-icon">➕</div>
+      <div class="app-info">
+        <h3>Sumes i Restes</h3>
+        <p>Practica amb regletes i recta numèrica · 1r–2n</p>
+        <div class="app-progress">
+          <div class="app-progress-bar"><div class="app-progress-fill" id="prog-sumes" style="width:0%"></div></div>
+          <span class="app-progress-pct" id="pct-sumes">—</span>
+        </div>
+      </div>
+      <span class="app-arrow">›</span>
+    </a>
+
+    <a class="app-card taules" href="taules/index.html" id="card-taules">
+      <div class="app-icon">✖️</div>
+      <div class="app-info">
+        <h3>Taules de Multiplicar</h3>
+        <p>Totes les taules amb dificultat adaptativa · 3r–5è</p>
+        <div class="app-progress">
+          <div class="app-progress-bar"><div class="app-progress-fill" id="prog-taules" style="width:0%"></div></div>
+          <span class="app-progress-pct" id="pct-taules">—</span>
+        </div>
+      </div>
+      <span class="app-arrow">›</span>
+    </a>
+
+    <a class="app-card geometria" href="geometria/index.html" id="card-geometria">
+      <div class="app-icon">🔷</div>
+      <div class="app-info">
+        <h3>Geometria</h3>
+        <p>Formes, costats, vèrtexs i simetria · 1r–3r</p>
+        <div class="app-progress">
+          <div class="app-progress-bar"><div class="app-progress-fill" id="prog-geometria" style="width:0%"></div></div>
+          <span class="app-progress-pct" id="pct-geometria">—</span>
+        </div>
+      </div>
+      <span class="app-arrow">›</span>
+    </a>
+
+  </div>
+
+  <div style="margin-top:24px;margin-bottom:8px">
+    <button class="btn btn-secondary btn-sm btn-full" onclick="openProfileModal()">👤 Gestionar perfils</button>
+  </div>
+
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-overlay" id="profile-modal" style="display:none" onclick="closeProfileModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h2 style="margin-bottom:16px">Perfils</h2>
+    <div class="profile-list" id="modal-profile-list"></div>
+    <div id="modal-new-form" style="display:none;margin-top:8px">
+      <div class="new-profile-form">
+        <input class="input" id="modal-name-input" type="text" placeholder="Nom del perfil..." maxlength="20">
+        <button class="btn btn-primary btn-sm" onclick="modalCreateProfile()">Crear</button>
+        <button class="btn btn-secondary btn-sm" onclick="hideNewProfileForm()">✕</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-secondary btn-sm" style="flex:1" onclick="showNewProfileForm()">+ Nou perfil</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="closeProfileModal()">Tancar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+// ── STATE ─────────────────────────────
+let hubData = mkLoadData();
+let hubCurrentId = hubData.lastProfile || null;
+
+// ── INIT ──────────────────────────────
+mkInitTheme();
+renderHub();
+
+function renderHub() {
+  hubData = mkLoadData();
+  const p = hubCurrentId ? mkGetProfile(hubData, hubCurrentId) : null;
+
+  // Profile bar
+  if (p) {
+    const lv = mkGetLevel(p.xp || 0);
+    document.getElementById('hub-avatar').textContent = p.name[0].toUpperCase();
+    document.getElementById('hub-profile-name').textContent = mkEscHtml(p.name);
+    document.getElementById('hub-profile-level').textContent = `Nivell ${lv} · ${mkLevelName(lv)}`;
+    document.getElementById('hub-xp-fill').style.width = mkXpPct(p.xp || 0) + '%';
+
+    // Stats
+    document.getElementById('hub-stats').style.display = '';
+    document.getElementById('hub-pts').textContent     = p.points || 0;
+    document.getElementById('hub-correct').textContent = p.totalCorrect || 0;
+    document.getElementById('hub-streak').textContent  = p.bestStreak || 0;
+
+    // Badges
+    document.getElementById('hub-badges-wrap').style.display = '';
+    document.getElementById('hub-badges').innerHTML = MK_BADGES_GLOBAL.map(b =>
+      `<div class="badge-mini ${p.badges.includes(b.id) ? 'earned' : ''}" title="${b.desc}">${b.icon} ${b.name}</div>`
+    ).join('');
+
+    // App progress
+    renderAppProgress(p);
+
+  } else {
+    document.getElementById('hub-avatar').textContent = '?';
+    document.getElementById('hub-profile-name').textContent = 'Selecciona un perfil';
+    document.getElementById('hub-profile-level').textContent = 'Toca per canviar';
+    document.getElementById('hub-xp-fill').style.width = '0%';
+    document.getElementById('hub-stats').style.display = 'none';
+    document.getElementById('hub-badges-wrap').style.display = 'none';
+  }
+}
+
+function renderAppProgress(p) {
+  // Sumes: average accuracy across all worlds and ops
+  const sumesPct = calcAppPct(p, 'sumes', ['sum_W1','sub_W1','sum_W2','sub_W2','sum_W3','sub_W3']);
+  document.getElementById('prog-sumes').style.width = sumesPct + '%';
+  document.getElementById('pct-sumes').textContent  = sumesPct > 0 ? sumesPct + '%' : '—';
+
+  // Taules: accuracy across all tables
+  const taulesKeys = [];
+  for (let t = 1; t <= 10; t++) taulesKeys.push(`t${t}`);
+  const tauPct = calcAppPctTaules(p, taulesKeys);
+  document.getElementById('prog-taules').style.width = tauPct + '%';
+  document.getElementById('pct-taules').textContent  = tauPct > 0 ? tauPct + '%' : '—';
+
+  // Geometria
+  const geoPct = calcAppPct(p, 'geo', ['shapes','classify','vertices','symmetry']);
+  document.getElementById('prog-geometria').style.width = geoPct + '%';
+  document.getElementById('pct-geometria').textContent  = geoPct > 0 ? geoPct + '%' : '—';
+}
+
+function calcAppPct(p, prefix, keys) {
+  let correct = 0, total = 0;
+  keys.forEach(k => {
+    const s = (p.appStats || {})[`${prefix}_${k}`];
+    if (s) { correct += s.correct || 0; total += (s.correct || 0) + (s.wrong || 0); }
+  });
+  return total === 0 ? 0 : Math.round((correct / total) * 100);
+}
+
+function calcAppPctTaules(p, keys) {
+  let correct = 0, total = 0;
+  keys.forEach(k => {
+    const s = (p.appStats || {})[`taules_${k}`];
+    if (s) { correct += s.correct || 0; total += (s.correct || 0) + (s.wrong || 0); }
+  });
+  return total === 0 ? 0 : Math.round((correct / total) * 100);
+}
+
+// ── PROFILE MODAL ─────────────────────
+function openProfileModal() {
+  hubData = mkLoadData();
+  renderModalList();
+  document.getElementById('profile-modal').style.display = 'flex';
+}
+function closeProfileModal(e) {
+  if (!e || e.target === document.getElementById('profile-modal')) {
+    document.getElementById('profile-modal').style.display = 'none';
+  }
+}
+function renderModalList() {
+  const list = document.getElementById('modal-profile-list');
+  if (!hubData.profiles.length) {
+    list.innerHTML = '<div class="empty-state">Encara no hi ha cap perfil.</div>';
+    return;
+  }
+  list.innerHTML = hubData.profiles.map(p => {
+    const lv = mkGetLevel(p.xp || 0);
+    return `<div class="profile-item ${hubCurrentId === p.id ? 'selected' : ''}"
+      onclick="selectProfile('${p.id}')">
+      <div class="profile-item-info">
+        <div class="profile-avatar">${mkEscHtml(p.name[0].toUpperCase())}</div>
+        <div>
+          <div class="profile-name">${mkEscHtml(p.name)}</div>
+          <div class="profile-pts">${p.points} pts · Nivell ${lv}</div>
+        </div>
+      </div>
+      <button class="profile-delete" onclick="event.stopPropagation();deleteProfile('${p.id}')">🗑</button>
+    </div>`;
+  }).join('');
+}
+function selectProfile(id) {
+  hubCurrentId = id;
+  hubData.lastProfile = id;
+  mkSaveData(hubData);
+  renderModalList();
+  renderHub();
+}
+function deleteProfile(id) {
+  if (!confirm('Eliminar aquest perfil?')) return;
+  hubData.profiles = hubData.profiles.filter(p => p.id !== id);
+  if (hubCurrentId === id) { hubCurrentId = null; hubData.lastProfile = null; }
+  mkSaveData(hubData);
+  renderModalList();
+  renderHub();
+}
+function showNewProfileForm() {
+  document.getElementById('modal-new-form').style.display = '';
+  document.getElementById('modal-name-input').focus();
+}
+function hideNewProfileForm() {
+  document.getElementById('modal-new-form').style.display = 'none';
+  document.getElementById('modal-name-input').value = '';
+}
+function modalCreateProfile() {
+  const name = document.getElementById('modal-name-input').value.trim();
+  if (!name) return;
+  const p = mkDefaultProfile(name);
+  hubData.profiles.push(p);
+  hubCurrentId = p.id;
+  hubData.lastProfile = p.id;
+  mkSaveData(hubData);
+  hideNewProfileForm();
+  renderModalList();
+  renderHub();
+}
+document.getElementById('modal-name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') modalCreateProfile();
+});
+
+function mkEscHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
