@@ -304,8 +304,8 @@ p{color:var(--ink-soft);}
       <svg id="shape-svg" width="160" height="160" viewBox="-90 -90 180 180" style="overflow:visible"></svg>
     </div>
     <div class="feedback-text" id="geo-feedback"></div>
-    <div class="options-grid cols-2" id="options-area"></div>
-    <div id="count-area" style="display:none;width:100%;display:none;flex-direction:column;align-items:center;gap:10px">
+    <div class="options-grid cols-2" id="options-area" style="display:none"></div>
+    <div id="count-area" style="display:none;width:100%;flex-direction:column;align-items:center;gap:10px">
       <input class="answer-input" id="count-input" type="number" inputmode="numeric" pattern="[0-9]*" placeholder="?" autocomplete="off">
       <div class="numpad">
         <button class="num-btn" onclick="numpadPress('1')">1</button>
@@ -501,7 +501,7 @@ function goToSetup(wid){
 function selectMode(el){document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('selected'));el.classList.add('selected');setupMode=el.dataset.mode;}
 
 // ══ GAME ══
-let gs={};
+let gs = {mode:'practice',world:1,shapeIds:[],score:0,correct:0,wrong:0,streak:0,bestStreak:0,qCount:0,answering:false,wrongLog:[],totalQ:20,currentShape:null,countAnswer:0,symAnswer:false};
 function startGame(){
   const world=GEO_WORLDS.find(w=>w.id===setupWorld);
   gs={mode:setupMode,world:setupWorld,shapeIds:world.shapes,score:0,correct:0,wrong:0,streak:0,bestStreak:0,qCount:0,answering:false,wrongLog:[],totalQ:20};
@@ -578,7 +578,7 @@ function renderSymmetry(shape){
 }
 
 function answerOpt(sel,cor){if(gs.answering)return;handleAnswer(sel===cor,cor);}
-function answerSym(val){if(gs.answering)return;handleAnswer(val===gs.symAnswer,gs.symAnswer);}
+function answerSym(val){if(gs.answering)return;const b=(val===true||val==='true');handleAnswer(b===gs.symAnswer,gs.symAnswer);}
 function submitCount(){
   if(gs.answering)return;
   const val=parseInt(document.getElementById('count-input').value);
