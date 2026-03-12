@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ca" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometria — MatemApp</title>
+<link rel="stylesheet" href="../css/shared.css">
+<style>
+/* ══ GEOMETRY-SPECIFIC STYLES ══ */
+:root {
+  --app-color: var(--purple);
+  --app-light: var(--purple-light);
+}
+
+/* ── MODE TABS ── */
+.mode-tabs { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+.mode-tab {
+  padding: 14px; border-radius: var(--radius-sm); border: 2px solid var(--border);
+  background: var(--surface); cursor: pointer; transition: all 0.15s;
+  text-align: center; font-family: var(--sans); font-weight: 700;
+  font-size: 0.88rem; color: var(--ink-soft);
+}
+.mode-tab:hover { border-color: var(--purple); color: var(--ink); }
+.mode-tab.selected { background: var(--purple-light); border-color: var(--purple); color: var(--purple); }
+.mode-tab .mode-tab-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+
+/* ── SHAPE SVG AREA ── */
+.shape-area {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 20px;
+}
+.shape-svg-wrap {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; min-height: 180px;
+}
+#shape-svg { overflow: visible; }
+
+/* ── ANSWER OPTIONS ── */
+.options-grid {
+  display: grid; gap: 10px; width: 100%;
+}
+.options-grid.cols-2 { grid-template-columns: repeat(2,1fr); }
+.options-grid.cols-3 { grid-template-columns: repeat(3,1fr); }
+
+.option-btn {
+  padding: 14px 10px; border-radius: var(--radius-sm); border: 2px solid var(--border);
+  background: var(--surface); font-family: var(--sans); font-size: 0.9rem;
+  font-weight: 700; cursor: pointer; transition: all 0.15s; color: var(--ink);
+  text-align: center; line-height: 1.3;
+}
+.option-btn:hover:not(:disabled) { border-color: var(--purple); background: var(--purple-light); }
+.option-btn.correct  { background: var(--green-light);  border-color: var(--green);  color: var(--green);  animation: pulse-green 0.35s ease; }
+.option-btn.wrong    { background: var(--red-light);    border-color: var(--red);    color: var(--red); }
+.option-btn.reveal   { background: var(--green-light);  border-color: var(--green); }
+.option-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* ── SHAPE COUNT INPUT (costats/vèrtexs) ── */
+.count-question {
+  font-family: var(--mono); font-size: 1.1rem; color: var(--ink);
+  text-align: center; font-weight: 500;
+}
+.answer-input-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+
+/* ── SYMMETRY SVG ── */
+.symmetry-preview { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+/* ── QUESTION LABEL ── */
+.question-label {
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+
+/* ── FEEDBACK ── */
+.geo-feedback {
+  font-size: 0.95rem; font-weight: 700; height: 22px; text-align: center;
+}
+.geo-feedback.correct { color: var(--green); }
+.geo-feedback.wrong   { color: var(--red); }
+
+/* ── WORLDS ── */
+.worlds-map { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.world-card {
+  border-radius: var(--radius); padding: 18px 20px;
+  border: 2px solid var(--border); background: var(--surface);
+  cursor: pointer; transition: all 0.18s; position: relative; overflow: hidden;
+}
+.world-card.locked  { opacity: 0.5; cursor: not-allowed; }
+.world-card.unlocked:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--purple); }
+.world-card-inner { display: flex; align-items: center; gap: 16px; }
+.world-icon { font-size: 2rem; flex-shrink: 0; }
+.world-info h3 { font-size: 1rem; font-weight: 800; color: var(--ink); margin-bottom: 2px; }
+.world-info p  { font-size: 0.8rem; color: var(--ink-soft); }
+.world-progress-bar { height: 6px; background: var(--border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.world-progress-fill { height: 100%; background: var(--purple); border-radius: 3px; transition: width 0.6s ease; }
+.world-pct  { position: absolute; top: 14px; right: 16px; font-family: var(--mono); font-size: 0.75rem; color: var(--ink-soft); }
+.world-lock { position: absolute; top: 14px; right: 16px; font-size: 1.1rem; }
+
+/* ── NEW BADGE ── */
+.new-badge-banner {
+  background: var(--yellow-light); border: 2px solid var(--yellow);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700;
+  animation: slideIn 0.4s ease;
+}
+.world-unlock-banner {
+  background: var(--purple-light); border: 2px solid var(--purple);
+  border-radius: var(--radius-sm); padding: 16px 18px;
+  display: flex; align-items: center; gap: 12px; animation: slideIn 0.4s ease;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div class="screen active" id="screen-home">
+  <div class="nav">
+    <a class="nav-logo" href="../index.html">Math<span class="dot">Kids</span></a>
+    <div class="nav-actions">
+      <button class="theme-btn" onclick="mkToggleTheme()">🌙</button>
+    </div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:28px">
+    <div>
+      <h1 style="font-size:2.4rem">🔷 Geometria</h1>
+      <p style="margin-top:6px">Formes, costats, vèrtexs i simetria</p>
+    </div>
+    <div>
+      <div class="section-label">Perfil</div>
+      <div class="profile-list" id="profile-list"></div>
+      <div id="new-profile-form" style="display:none;margin-top:8px">
+        <div class="new-profile-form">
+          <input class="input" id="new-profile-input" type="text" placeholder="El teu nom..." maxlength="20">
+          <button class="btn btn-primary btn-sm" onclick="createProfile()">Crear</button>
+          <button class="btn btn-secondary btn-sm" onclick="cancelNewProfile()">✕</button>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-full" id="btn-new-profile" onclick="showNewProfileForm()" style="margin-top:10px">+ Nou perfil</button>
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-enter" onclick="goToDashboard()" disabled>Entrar →</button>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="screen" id="screen-dashboard">
+  <div class="nav">
+    <a class="nav-logo" href="../index.html">Math<span class="dot">Kids</span></a>
+    <div class="nav-actions">
+      <button class="theme-btn" onclick="mkToggleTheme()">🌙</button>
+      <button class="btn btn-ghost btn-sm" onclick="mkGoTo('screen-home')">← Perfils</button>
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <p class="tag" id="dash-tag">Hola!</p>
+        <h2 id="dash-name" style="margin-top:6px;font-size:1.5rem"></h2>
+      </div>
+      <div style="text-align:right">
+        <div id="dash-level" style="font-family:var(--mono);font-size:1.5rem;font-weight:500;color:var(--purple)"></div>
+        <div style="font-size:0.7rem;color:var(--ink-soft);font-weight:700">Nivell</div>
+      </div>
+    </div>
+    <div class="xp-bar-wrap"><div class="xp-bar" id="xp-bar" style="background:var(--purple)"></div></div>
+    <div class="xp-label"><span id="xp-current"></span><span id="xp-next"></span></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-value" id="stat-pts">0</div><div class="stat-label">Punts</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-correct">0</div><div class="stat-label">Encerts</div></div>
+    <div class="stat-card"><div class="stat-value" id="stat-streak">0</div><div class="stat-label">Millor ratxa</div></div>
+  </div>
+
+  <div class="section-label">Nivells</div>
+  <div class="worlds-map" id="worlds-map"></div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="section-label">Medalles</div>
+    <div class="badges-row" id="badges-row"></div>
+  </div>
+
+  <div style="padding-bottom:8px">
+    <button class="btn btn-secondary btn-sm btn-full" onclick="exportCSV()">⬇ Exportar progrés (CSV)</button>
+  </div>
+</div>
+
+<!-- ══ SETUP ══ -->
+<div class="screen" id="screen-setup">
+  <div class="nav">
+    <a class="nav-logo" href="../index.html">Math<span class="dot">Kids</span></a>
+    <button class="btn btn-ghost btn-sm" onclick="mkGoTo('screen-dashboard');renderDashboard()">← Enrere</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:22px;flex:1">
+    <div>
+      <p class="tag" id="setup-world-tag">Nivell</p>
+      <h2 id="setup-title" style="margin-top:6px"></h2>
+      <p id="setup-desc" style="margin-top:4px;font-size:0.88rem"></p>
+    </div>
+
+    <div>
+      <div class="section-label">Mode de joc</div>
+      <div class="mode-tabs">
+        <div class="mode-tab selected" data-mode="practice" onclick="selectMode(this)">
+          <span class="mode-tab-icon">🔍</span>Reconèixer
+        </div>
+        <div class="mode-tab" data-mode="count" onclick="selectMode(this)">
+          <span class="mode-tab-icon">🔢</span>Comptar
+        </div>
+        <div class="mode-tab" data-mode="classify" onclick="selectMode(this)">
+          <span class="mode-tab-icon">📋</span>Classificar
+        </div>
+        <div class="mode-tab" data-mode="symmetry" onclick="selectMode(this)" id="tab-symmetry">
+          <span class="mode-tab-icon">🪞</span>Simetria
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-auto">
+      <button class="btn btn-primary btn-full" onclick="startGame()">Començar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div class="screen" id="screen-game">
+  <div class="game-header">
+    <div class="score-badge" style="background:var(--purple-light);color:var(--purple)">⭐ <span id="game-score">0</span></div>
+    <div style="flex:1"></div>
+    <button class="btn btn-ghost btn-sm" onclick="endGame(true)" style="padding:8px 12px">✕</button>
+  </div>
+
+  <div class="streak-row">
+    <span style="font-size:0.7rem;color:var(--ink-soft);font-family:var(--mono);font-weight:500">Ratxa:</span>
+    <div class="streak-dot" id="sd0"></div><div class="streak-dot" id="sd1"></div>
+    <div class="streak-dot" id="sd2"></div><div class="streak-dot" id="sd3"></div>
+    <div class="streak-dot" id="sd4"></div>
+  </div>
+
+  <div class="shape-area">
+    <div class="question-label" id="q-label">Pregunta 1</div>
+    <div id="q-question" style="font-weight:700;font-size:1rem;text-align:center;color:var(--ink);margin-bottom:4px"></div>
+
+    <div class="shape-svg-wrap" id="shape-svg-wrap">
+      <svg id="shape-svg" width="160" height="160" viewBox="-90 -90 180 180"></svg>
+    </div>
+
+    <div class="geo-feedback" id="geo-feedback"></div>
+
+    <!-- Options (recognition / classification / symmetry) -->
+    <div class="options-grid cols-2" id="options-area"></div>
+
+    <!-- Count input (costats/vèrtexs) -->
+    <div id="count-area" style="display:none;width:100%">
+      <div class="answer-input-wrap">
+        <input class="answer-input" id="count-input" type="number" inputmode="numeric"
+               pattern="[0-9]*" placeholder="?" autocomplete="off" style="width:120px;font-size:2rem">
+      </div>
+      <div class="numpad" style="margin:12px auto 0">
+        <button class="num-btn" onclick="numpadPress('1')">1</button>
+        <button class="num-btn" onclick="numpadPress('2')">2</button>
+        <button class="num-btn" onclick="numpadPress('3')">3</button>
+        <button class="num-btn" onclick="numpadPress('4')">4</button>
+        <button class="num-btn" onclick="numpadPress('5')">5</button>
+        <button class="num-btn" onclick="numpadPress('6')">6</button>
+        <button class="num-btn" onclick="numpadPress('7')">7</button>
+        <button class="num-btn" onclick="numpadPress('8')">8</button>
+        <button class="num-btn" onclick="numpadPress('9')">9</button>
+        <button class="num-btn del-btn" onclick="numpadPress('del')">⌫</button>
+        <button class="num-btn" onclick="numpadPress('0')">0</button>
+        <button class="num-btn ok-btn" onclick="submitCount()" style="background:var(--purple);border-color:var(--purple)">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTS ══ -->
+<div class="screen" id="screen-results">
+  <div class="nav">
+    <a class="nav-logo" href="../index.html">Math<span class="dot">Kids</span></a>
+    <span class="tag" id="results-mode-tag">Mode</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1">
+    <div class="result-score-big">
+      <div class="score-num" id="res-score" style="color:var(--purple)">0</div>
+      <div class="score-label">punts aconseguits</div>
+    </div>
+    <div class="result-stats">
+      <div class="result-stat"><div class="val" id="res-correct">0</div><div class="lbl">✅ Encerts</div></div>
+      <div class="result-stat"><div class="val" id="res-wrong">0</div><div class="lbl">❌ Errors</div></div>
+      <div class="result-stat"><div class="val" id="res-streak">0</div><div class="lbl">🔥 Millor ratxa</div></div>
+      <div class="result-stat"><div class="val" id="res-accuracy">0%</div><div class="lbl">🎯 Precisió</div></div>
+    </div>
+    <div id="world-unlock-area"></div>
+    <div id="review-section" class="card" style="display:none">
+      <div class="section-label" style="margin-bottom:8px">Revisa els errors</div>
+      <div id="review-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto"></div>
+    </div>
+    <div id="new-badges-area"></div>
+    <div class="mt-auto gap-8" style="padding-bottom:8px">
+      <button class="btn btn-primary btn-full" onclick="mkGoTo('screen-setup')">Tornar a jugar</button>
+      <button class="btn btn-secondary btn-full" onclick="mkGoTo('screen-dashboard');renderDashboard()">Tauler →</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/shared.js"></script>
+<script>
+// ══════════════════════════════════════════
+// SHAPES DATABASE
+// ══════════════════════════════════════════
+const SHAPES = [
+  {
+    id: 'cercle', name: 'Cercle', sides: 0, vertices: 0,
+    symmetry: true, symmetryAxes: 'infinites',
+    category: 'corba',
+    color: '#E8001C',
+    draw(svg) {
+      svg.innerHTML = `<circle cx="0" cy="0" r="70" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3"/>`;
+    }
+  },
+  {
+    id: 'triangle', name: 'Triangle', sides: 3, vertices: 3,
+    symmetry: true, symmetryAxes: 1,
+    category: 'polygon',
+    color: '#7CBB00',
+    draw(svg) {
+      svg.innerHTML = `<polygon points="0,-72 62,36 -62,36" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3" stroke-linejoin="round"/>`;
+    }
+  },
+  {
+    id: 'quadrat', name: 'Quadrat', sides: 4, vertices: 4,
+    symmetry: true, symmetryAxes: 4,
+    category: 'polygon',
+    color: '#C000C0',
+    draw(svg) {
+      svg.innerHTML = `<rect x="-60" y="-60" width="120" height="120" rx="4" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3"/>`;
+    }
+  },
+  {
+    id: 'rectangle', name: 'Rectangle', sides: 4, vertices: 4,
+    symmetry: true, symmetryAxes: 2,
+    category: 'polygon',
+    color: '#2D6BE4',
+    draw(svg) {
+      svg.innerHTML = `<rect x="-78" y="-45" width="156" height="90" rx="4" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3"/>`;
+    }
+  },
+  {
+    id: 'pentagon', name: 'Pentàgon', sides: 5, vertices: 5,
+    symmetry: true, symmetryAxes: 5,
+    category: 'polygon',
+    color: '#F59E0B',
+    draw(svg) {
+      const pts = pentagon(72);
+      svg.innerHTML = `<polygon points="${pts}" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3" stroke-linejoin="round"/>`;
+    }
+  },
+  {
+    id: 'hexagon', name: 'Hexàgon', sides: 6, vertices: 6,
+    symmetry: true, symmetryAxes: 6,
+    category: 'polygon',
+    color: '#16A34A',
+    draw(svg) {
+      const pts = regularPoly(6, 72, -90);
+      svg.innerHTML = `<polygon points="${pts}" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3" stroke-linejoin="round"/>`;
+    }
+  },
+  {
+    id: 'rombe', name: 'Rombe', sides: 4, vertices: 4,
+    symmetry: true, symmetryAxes: 2,
+    category: 'polygon',
+    color: '#EA580C',
+    draw(svg) {
+      svg.innerHTML = `<polygon points="0,-72 60,0 0,72 -60,0" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3" stroke-linejoin="round"/>`;
+    }
+  },
+  {
+    id: 'trapezi', name: 'Trapezi', sides: 4, vertices: 4,
+    symmetry: false, symmetryAxes: 0,
+    category: 'polygon',
+    color: '#7C3AED',
+    draw(svg) {
+      svg.innerHTML = `<polygon points="-40,-45 40,-45 75,45 -75,45" fill="${this.color}" fill-opacity="0.18" stroke="${this.color}" stroke-width="3" stroke-linejoin="round"/>`;
+    }
+  },
+];
+
+// Symmetric shapes list (for symmetry mode)
+const SYM_SHAPES    = SHAPES.filter(s => s.symmetry);
+const NOSYM_SHAPES  = SHAPES.filter(s => !s.symmetry);
+
+function regularPoly(n, r, startAngle = -90) {
+  return Array.from({length: n}, (_,i) => {
+    const a = (startAngle + i * 360/n) * Math.PI / 180;
+    return `${(r*Math.cos(a)).toFixed(1)},${(r*Math.sin(a)).toFixed(1)}`;
+  }).join(' ');
+}
+function pentagon(r) { return regularPoly(5, r, -90); }
+
+// ══════════════════════════════════════════
+// WORLDS
+// ══════════════════════════════════════════
+const GEO_WORLDS = [
+  { id: 1, name: 'Nivell 1 — Formes bàsiques', icon: '🟦', desc: 'Cercle, triangle, quadrat, rectangle', shapes: ['cercle','triangle','quadrat','rectangle'] },
+  { id: 2, name: 'Nivell 2 — Més formes',      icon: '🔷', desc: 'Pentàgon, hexàgon, rombe, trapezi',  shapes: ['pentagon','hexagon','rombe','trapezi'] },
+  { id: 3, name: 'Nivell 3 — Tot barrejat',     icon: '🌟', desc: 'Totes les formes',                   shapes: SHAPES.map(s=>s.id) },
+];
+
+const GEO_BADGES = [
+  { id: 'geo_shapes4',   name: '4 formes!',    icon: '🔷', desc: 'Conèixes les 4 formes bàsiques' },
+  { id: 'geo_all',       name: 'Geòmetra!',    icon: '📐', desc: 'Conèixes totes les formes' },
+  { id: 'geo_symmetry',  name: 'Simetria!',    icon: '🪞', desc: 'Mestres de la simetria' },
+  { id: 'geo_perfect',   name: 'Perfecte!',    icon: '✨', desc: 'Partida sense errors' },
+  { id: 'geo_streak5',   name: 'Ratxa x5',     icon: '🔥', desc: '5 encerts seguits a Geometria' },
+];
+const ALL_BADGES = [...MK_BADGES_GLOBAL, ...GEO_BADGES];
+
+// ══════════════════════════════════════════
+// APP STATE
+// ══════════════════════════════════════════
+let appData = mkLoadData();
+let currentProfile = null;
+let setupWorld = 1;
+let setupMode = 'practice';
+let gameState = {};
+
+mkInitTheme();
+
+// ══════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════
+function renderProfileList() {
+  const list = document.getElementById('profile-list');
+  if (!appData.profiles.length) {
+    list.innerHTML = '<div class="empty-state">Crea el teu primer perfil!</div>';
+    document.getElementById('btn-enter').disabled = true; return;
+  }
+  list.innerHTML = appData.profiles.map(p => {
+    const lv = mkGetLevel(p.xp || 0);
+    return `<div class="profile-item ${currentProfile?.id===p.id?'selected':''}" onclick="selectProfile('${p.id}')">
+      <div class="profile-item-info">
+        <div class="profile-avatar">${escHtml(p.name[0].toUpperCase())}</div>
+        <div><div class="profile-name">${escHtml(p.name)}</div><div class="profile-pts">${p.points} pts · Niv.${lv}</div></div>
+      </div>
+      <button class="profile-delete" onclick="event.stopPropagation();deleteProfile('${p.id}')">🗑</button>
+    </div>`;
+  }).join('');
+  document.getElementById('btn-enter').disabled = !currentProfile;
+}
+function selectProfile(id) { currentProfile = mkGetProfile(appData, id); renderProfileList(); document.getElementById('btn-enter').disabled = false; }
+function showNewProfileForm()  { document.getElementById('new-profile-form').style.display=''; document.getElementById('btn-new-profile').style.display='none'; document.getElementById('new-profile-input').focus(); }
+function cancelNewProfile()    { document.getElementById('new-profile-form').style.display='none'; document.getElementById('btn-new-profile').style.display=''; document.getElementById('new-profile-input').value=''; }
+function createProfile() {
+  const name = document.getElementById('new-profile-input').value.trim();
+  if (!name) return;
+  const p = mkDefaultProfile(name);
+  appData.profiles.push(p); mkSaveData(appData);
+  currentProfile = p; cancelNewProfile(); renderProfileList();
+  document.getElementById('btn-enter').disabled = false;
+}
+function deleteProfile(id) {
+  if (!confirm('Eliminar aquest perfil?')) return;
+  appData.profiles = appData.profiles.filter(p=>p.id!==id);
+  if (currentProfile?.id===id) currentProfile = null;
+  mkSaveData(appData); renderProfileList();
+}
+document.getElementById('new-profile-input').addEventListener('keydown', e => { if(e.key==='Enter') createProfile(); });
+function goToDashboard() { if (!currentProfile) return; renderDashboard(); mkGoTo('screen-dashboard'); }
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function getWorldPct(wid) {
+  const world = GEO_WORLDS.find(w=>w.id===wid);
+  let correct=0, total=0;
+  world.shapes.forEach(sid => {
+    const key = `geo_${sid}`;
+    const s = (currentProfile.appStats||{})[key];
+    if (s) { correct+=s.correct||0; total+=(s.correct||0)+(s.wrong||0); }
+  });
+  return total===0 ? 0 : Math.round(correct/total*100);
+}
+function isWorldUnlocked(wid) {
+  if (wid===1) return true;
+  return getWorldPct(wid-1) >= 70 && getWorldTotalAttempts(wid-1) >= 15;
+}
+function getWorldTotalAttempts(wid) {
+  const world = GEO_WORLDS.find(w=>w.id===wid);
+  let total=0;
+  world.shapes.forEach(sid => {
+    const s = (currentProfile.appStats||{})[`geo_${sid}`];
+    if (s) total += (s.correct||0)+(s.wrong||0);
+  });
+  return total;
+}
+
+function renderDashboard() {
+  const fresh = mkGetProfile(appData, currentProfile.id);
+  if (fresh) currentProfile = fresh;
+  const p = currentProfile;
+
+  document.getElementById('dash-tag').textContent = `Hola, ${p.name}!`;
+  document.getElementById('dash-name').textContent = `${p.gamesPlayed||0} partides jugades`;
+
+  mkRenderXpBar({ profile: p, barId:'xp-bar', currentId:'xp-current', nextId:'xp-next', levelId:'dash-level' });
+
+  document.getElementById('stat-pts').textContent     = p.points;
+  document.getElementById('stat-correct').textContent = p.totalCorrect;
+  document.getElementById('stat-streak').textContent  = p.bestStreak;
+
+  document.getElementById('worlds-map').innerHTML = GEO_WORLDS.map(w => {
+    const unlocked = isWorldUnlocked(w.id);
+    const pct = getWorldPct(w.id);
+    return `<div class="world-card ${unlocked?'unlocked':'locked'}" onclick="${unlocked?`goToSetup(${w.id})`:''}">
+      <div class="world-card-inner">
+        <div class="world-icon">${w.icon}</div>
+        <div class="world-info" style="flex:1">
+          <h3>${w.name}</h3><p>${w.desc}</p>
+          <div class="world-progress-bar"><div class="world-progress-fill" style="width:${pct}%"></div></div>
+        </div>
+      </div>
+      ${unlocked ? `<div class="world-pct">${pct}%</div>` : '<div class="world-lock">🔒</div>'}
+    </div>`;
+  }).join('');
+
+  document.getElementById('badges-row').innerHTML = ALL_BADGES.map(b =>
+    `<div class="badge ${p.badges.includes(b.id)?'earned':''}" title="${b.desc}">${b.icon} ${b.name}</div>`
+  ).join('');
+}
+
+function exportCSV() {
+  const p = currentProfile;
+  const rows = ['Forma,Encerts,Errors,Precisió (%)'];
+  SHAPES.forEach(s => {
+    const key = `geo_${s.id}`;
+    const st = (p.appStats||{})[key];
+    const c = st?.correct||0, w = st?.wrong||0, t = c+w;
+    rows.push(`${s.name},${c},${w},${t>0?Math.round(c/t*100):0}`);
+  });
+  rows.push('','Perfil','Alumne,'+p.name,'Punts,'+p.points,'Data,'+new Date().toLocaleDateString('ca-ES'));
+  const blob = new Blob(['\uFEFF'+rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url;
+  a.download = `geometria_${p.name.replace(/\s/g,'_')}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════════
+function goToSetup(wid) {
+  setupWorld = wid;
+  setupMode = 'practice';
+  const w = GEO_WORLDS.find(x=>x.id===wid);
+  document.getElementById('setup-world-tag').textContent = w.name;
+  document.getElementById('setup-title').textContent = `${w.icon} Configuració`;
+  document.getElementById('setup-desc').textContent = w.desc;
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('selected'));
+  document.querySelector('[data-mode="practice"]').classList.add('selected');
+  // Symmetry only available from level 2
+  document.getElementById('tab-symmetry').style.opacity = wid>=2 ? '1' : '0.4';
+  mkGoTo('screen-setup');
+}
+function selectMode(el) {
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('selected'));
+  el.classList.add('selected'); setupMode = el.dataset.mode;
+}
+
+// ══════════════════════════════════════════
+// GAME ENGINE
+// ══════════════════════════════════════════
+const MODEDATA = {
+  practice:  { label: 'Reconèixer', qPerGame: 20 },
+  count:     { label: 'Comptar',    qPerGame: 20 },
+  classify:  { label: 'Classificar',qPerGame: 20 },
+  symmetry:  { label: 'Simetria',   qPerGame: 16 },
+};
+
+function startGame() {
+  const world = GEO_WORLDS.find(w=>w.id===setupWorld);
+  gameState = {
+    mode: setupMode, world: setupWorld,
+    shapeIds: world.shapes,
+    score: 0, correct: 0, wrong: 0, streak: 0, bestStreak: 0,
+    questionCount: 0, answering: false, wrongLog: [],
+    qStartTime: 0,
+    totalQ: MODEDATA[setupMode].qPerGame,
+    done: false,
+  };
+  document.getElementById('game-score').textContent = '0';
+  updateStreakDots(0);
+  loadNextQuestion();
+  mkGoTo('screen-game');
+}
+
+function loadNextQuestion() {
+  const gs = gameState;
+  if (gs.questionCount >= gs.totalQ) { endGame(false); return; }
+  gs.questionCount++;
+  gs.answering = false;
+  document.getElementById('q-label').textContent = `Pregunta ${gs.questionCount} / ${gs.totalQ}`;
+  document.getElementById('geo-feedback').textContent = '';
+  document.getElementById('geo-feedback').className = 'geo-feedback';
+
+  const mode = gs.mode;
+  const shape = pickShape(gs.shapeIds);
+  gs.currentShape = shape;
+
+  // Draw shape
+  const svg = document.getElementById('shape-svg');
+  shape.draw(svg);
+
+  if (mode === 'practice') renderPracticeQ(shape);
+  else if (mode === 'count') renderCountQ(shape);
+  else if (mode === 'classify') renderClassifyQ(shape);
+  else if (mode === 'symmetry') renderSymmetryQ(shape);
+}
+
+function pickShape(ids) {
+  // Weighted: shapes with lower accuracy appear more often
+  const weights = ids.map(id => {
+    const s = (currentProfile.appStats||{})[`geo_${id}`];
+    if (!s) return 3;
+    const t = (s.correct||0) + (s.wrong||0);
+    if (t === 0) return 3;
+    const rate = (s.correct||0) / t;
+    return rate < 0.6 ? 5 : rate < 0.8 ? 3 : 1;
+  });
+  const total = weights.reduce((a,b)=>a+b,0);
+  let r = Math.random() * total;
+  for (let i=0; i<ids.length; i++) { r -= weights[i]; if (r<=0) return SHAPES.find(s=>s.id===ids[i]); }
+  return SHAPES.find(s=>s.id===ids[ids.length-1]);
+}
+
+// ── PRACTICE: Quina forma és? ──
+function renderPracticeQ(shape) {
+  document.getElementById('q-question').textContent = '¿Quina forma és?';
+  document.getElementById('count-area').style.display = 'none';
+  const area = document.getElementById('options-area');
+  area.style.display = 'grid'; area.className = 'options-grid cols-2';
+
+  // 4 options: correct + 3 distractors from current world shapes
+  const world = GEO_WORLDS.find(w=>w.id===setupWorld);
+  const others = world.shapes.filter(id=>id!==shape.id);
+  mkShuffle(others);
+  const distractors = others.slice(0,3).map(id=>SHAPES.find(s=>s.id===id));
+  const options = mkShuffle([shape, ...distractors]);
+
+  area.innerHTML = options.map(s =>
+    `<button class="option-btn" onclick="answerPractice('${s.id}','${shape.id}')">${s.name}</button>`
+  ).join('');
+}
+
+// ── COUNT: Quants costats/vèrtexs té? ──
+function renderCountQ(shape) {
+  const askSides = shape.sides > 0 && Math.random() < 0.5;
+  const asksAbout = askSides || shape.sides === 0 ? 'costats' : 'vèrtexs';
+  const realAsk = shape.sides === 0 ? 'costats' : (Math.random()<0.5 ? 'costats' : 'vèrtexs');
+  gameState.countAsks = realAsk;
+  gameState.countAnswer = realAsk === 'costats' ? shape.sides : shape.vertices;
+
+  document.getElementById('q-question').textContent =
+    `Quants ${realAsk} té ${shape.sides===0?'el cercle':'aquesta forma'}?`;
+  document.getElementById('options-area').style.display = 'none';
+  document.getElementById('options-area').innerHTML = '';
+  document.getElementById('count-area').style.display = '';
+  document.getElementById('count-input').value = '';
+  document.getElementById('count-input').className = 'answer-input';
+  document.getElementById('count-input').focus();
+}
+
+// ── CLASSIFY: quin tipus de forma és? ──
+function renderClassifyQ(shape) {
+  document.getElementById('q-question').textContent = 'A quin grup pertany?';
+  document.getElementById('count-area').style.display = 'none';
+  const area = document.getElementById('options-area');
+  area.style.display = 'grid'; area.className = 'options-grid cols-2';
+
+  const categories = [
+    { id: '0costats', label: 'Cap costat (corba)', match: s => s.sides === 0 },
+    { id: '3costats', label: '3 costats',          match: s => s.sides === 3 },
+    { id: '4costats', label: '4 costats',          match: s => s.sides === 4 },
+    { id: '5o6',      label: '5 o 6 costats',      match: s => s.sides === 5 || s.sides === 6 },
+  ];
+  const correctCat = categories.find(c => c.match(shape));
+  const options = mkShuffle([...categories]);
+
+  area.innerHTML = options.map(c =>
+    `<button class="option-btn" onclick="answerClassify('${c.id}','${correctCat.id}')">${c.label}</button>`
+  ).join('');
+}
+
+// ── SYMMETRY: és simètrica? ──
+function renderSymmetryQ(shape) {
+  document.getElementById('q-question').textContent = '¿Aquesta forma és simètrica?';
+  document.getElementById('count-area').style.display = 'none';
+  const area = document.getElementById('options-area');
+  area.style.display = 'grid'; area.className = 'options-grid cols-2';
+  gameState.symmetryAnswer = shape.symmetry;
+
+  area.innerHTML = `
+    <button class="option-btn" onclick="answerSymmetry(true)">✅ Sí, és simètrica</button>
+    <button class="option-btn" onclick="answerSymmetry(false)">❌ No és simètrica</button>`;
+}
+
+// ══ ANSWER HANDLERS ══
+function answerPractice(selectedId, correctId) {
+  if (gameState.answering) return;
+  handleAnswer(selectedId === correctId, selectedId, correctId, null);
+}
+function answerClassify(selectedId, correctId) {
+  if (gameState.answering) return;
+  handleAnswer(selectedId === correctId, selectedId, correctId, null);
+}
+function answerSymmetry(val) {
+  if (gameState.answering) return;
+  handleAnswer(val === gameState.symmetryAnswer, val, gameState.symmetryAnswer, null);
+}
+function submitCount() {
+  if (gameState.answering) return;
+  const val = parseInt(document.getElementById('count-input').value);
+  if (isNaN(val)) return;
+  const correct = gameState.countAnswer;
+  const isCorrect = val === correct;
+  document.getElementById('count-input').className = 'answer-input ' + (isCorrect ? 'correct' : 'wrong');
+  handleAnswer(isCorrect, val, correct, correct);
+}
+function numpadPress(v) {
+  const inp = document.getElementById('count-input');
+  if (v==='del') { inp.value = inp.value.slice(0,-1); return; }
+  if (inp.value.length < 3) inp.value += v;
+}
+document.getElementById('count-input').addEventListener('keydown', e => { if(e.key==='Enter') submitCount(); });
+
+function handleAnswer(isCorrect, selected, correctVal, displayVal) {
+  const gs = gameState;
+  gs.answering = true;
+  const shape = gs.currentShape;
+  const fb = document.getElementById('geo-feedback');
+
+  // Update per-shape stats
+  if (!currentProfile.appStats) currentProfile.appStats = {};
+  const key = `geo_${shape.id}`;
+  if (!currentProfile.appStats[key]) currentProfile.appStats[key] = { correct:0, wrong:0 };
+
+  // Mark all options
+  if (gs.mode !== 'count') {
+    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+  }
+
+  if (isCorrect) {
+    gs.correct++; gs.streak++;
+    const bonus = gs.streak > 1 ? (gs.streak-1)*2 : 0;
+    gs.score += 10 + bonus;
+    if (gs.streak > gs.bestStreak) gs.bestStreak = gs.streak;
+    currentProfile.appStats[key].correct++;
+    fb.textContent = gs.streak >= 3 ? `✨ Combo x${gs.streak}! +${10+bonus}` : `Molt bé! +${10+bonus}`;
+    fb.className = 'geo-feedback correct';
+    document.getElementById('game-score').textContent = gs.score;
+    updateStreakDots(gs.streak);
+    if (gs.streak % 5 === 0) mkShowCombo(`Combo x${gs.streak}! 🔥`);
+    setTimeout(() => { gs.answering = false; loadNextQuestion(); }, 700);
+  } else {
+    gs.wrong++; gs.streak = 0;
+    currentProfile.appStats[key].wrong++;
+    gs.wrongLog.push({ shape: shape.name, asked: gs.mode, correctVal });
+    fb.textContent = displayVal !== null ? `La resposta era ${displayVal}` : `Era: ${shape.name}`;
+    fb.className = 'geo-feedback wrong';
+    updateStreakDots(0);
+    // Highlight correct option
+    if (gs.mode !== 'count') {
+      document.querySelectorAll('.option-btn').forEach(btn => {
+        if (btn.textContent.trim() === shape.name || btn.textContent.trim().includes(String(correctVal))) btn.classList.add('reveal');
+      });
+    }
+    setTimeout(() => { gs.answering = false; loadNextQuestion(); }, 1400);
+  }
+  mkSaveProfile(appData, currentProfile);
+}
+
+function updateStreakDots(s) {
+  for (let i=0; i<5; i++) document.getElementById('sd'+i).className = 'streak-dot'+(i<Math.min(s,5)?' on':'');
+}
+
+// ══════════════════════════════════════════
+// END GAME
+// ══════════════════════════════════════════
+function endGame(aborted) {
+  const gs = gameState;
+  const p = currentProfile;
+  const prevLevel = mkGetLevel(p.xp||0);
+
+  const xpGain = gs.correct * 5 + gs.bestStreak * 2;
+  p.points += gs.score;
+  p.xp = (p.xp||0) + xpGain;
+  p.totalCorrect = (p.totalCorrect||0) + gs.correct;
+  if (gs.bestStreak > (p.bestStreak||0)) p.bestStreak = gs.bestStreak;
+  p.gamesPlayed = (p.gamesPlayed||0) + 1;
+  if (!p.appsPlayed) p.appsPlayed = [];
+  if (!p.appsPlayed.includes('geometria')) p.appsPlayed.push('geometria');
+
+  if (aborted) {
+    mkSaveProfile(appData, p); mkGoTo('screen-dashboard'); renderDashboard(); return;
+  }
+
+  const newBadges = mkCheckGlobalBadges(p, { appId:'geo', correct:gs.correct, wrong:gs.wrong, streak:gs.bestStreak, mode:gs.mode });
+  // App-specific badges
+  if (gs.wrong===0 && gs.correct>=5) checkBadge(p,'geo_perfect', newBadges);
+  if (gs.bestStreak>=5) checkBadge(p,'geo_streak5', newBadges);
+  if (gs.mode==='symmetry') checkBadge(p,'geo_symmetry', newBadges);
+  const totalShapes = Object.keys(p.appStats||{}).filter(k=>k.startsWith('geo_') && ((p.appStats[k].correct||0)>0)).length;
+  if (totalShapes >= 4) checkBadge(p,'geo_shapes4', newBadges);
+  if (totalShapes >= SHAPES.length) checkBadge(p,'geo_all', newBadges);
+
+  mkSaveProfile(appData, p);
+
+  const newLevel = mkGetLevel(p.xp);
+  if (newLevel > prevLevel) mkShowLevelUp(newLevel, () => showResults(gs, newBadges));
+  else showResults(gs, newBadges);
+}
+
+function checkBadge(p, id, arr) {
+  if (!p.badges.includes(id)) { p.badges.push(id); arr.push(id); }
+}
+
+function showResults(gs, newBadges) {
+  const total = gs.correct + gs.wrong;
+  const acc = total>0 ? Math.round(gs.correct/total*100) : 0;
+  const modeNames = { practice:'Reconèixer', count:'Comptar', classify:'Classificar', symmetry:'Simetria' };
+
+  document.getElementById('results-mode-tag').textContent = modeNames[gs.mode]||gs.mode;
+  document.getElementById('res-score').textContent    = gs.score;
+  document.getElementById('res-correct').textContent  = gs.correct;
+  document.getElementById('res-wrong').textContent    = gs.wrong;
+  document.getElementById('res-streak').textContent   = gs.bestStreak;
+  document.getElementById('res-accuracy').textContent = acc + '%';
+
+  const reviewSec = document.getElementById('review-section');
+  if (gs.wrongLog.length) {
+    reviewSec.style.display='';
+    document.getElementById('review-list').innerHTML = gs.wrongLog.map(e =>
+      `<div class="review-item"><span class="q">${e.shape}</span><span class="ans">→ ${e.asked}</span></div>`
+    ).join('');
+  } else { reviewSec.style.display='none'; }
+
+  document.getElementById('new-badges-area').innerHTML = newBadges.length ? newBadges.map(id => {
+    const b = ALL_BADGES.find(x=>x.id===id);
+    if (!b) return '';
+    return `<div class="new-badge-banner">${b.icon} <strong>Nova medalla!</strong> ${b.name} — ${b.desc}</div>`;
+  }).join('') : '';
+
+  mkGoTo('screen-results');
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+renderProfileList();
+</script>
+</body>
+</html>
