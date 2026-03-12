@@ -1,15 +1,15 @@
-# MathKids 🧮
+# MatemApp 🧮
 
 Plataforma d'aplicacions de matemàtiques per a nens i nenes de 6–8 anys. Totes les apps comparteixen perfils, XP i medalles, i funcionen directament al navegador sense instal·lació.
 
-🔗 **[Obre MathKids](https://albertgodina.github.io/mathkids)**
+🔗 **[Obre matemapp](https://albertgodina.github.io/matemapp)**
 
 ---
 
 ## 📁 Estructura del projecte
 
 ```
-mathkids/
+matemapp/
 ├── index.html          ← Hub central: selector d'activitats i perfils
 ├── css/
 │   └── shared.css      ← Tokens de disseny, components i animacions comuns
@@ -120,7 +120,7 @@ Aprèn les formes geomètriques de manera progressiva.
 1. Fes un **fork** d'aquest repositori
 2. Ves a **Settings → Pages**
 3. Selecciona branca `main` i carpeta `/ (root)`
-4. Guarda — l'app estarà disponible a `https://el-teu-usuari.github.io/mathkids`
+4. Guarda — l'app estarà disponible a `https://el-teu-usuari.github.io/matemapp`
 
 Per provar canvis sense afectar la versió publicada, treballa a la branca `dev` i canvia l'origen de Pages temporalment.
 
